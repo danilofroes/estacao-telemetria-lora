@@ -18,7 +18,7 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 
-#include "../include/configTransmissor.hpp"
+#include "../include/configuracoes/configTransmissor.hpp"
 
 extern "C" void app_main(void) {
    // Inicializando a non-volatile storage (NVS)
