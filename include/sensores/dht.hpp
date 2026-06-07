@@ -47,7 +47,9 @@ class DHT {
         float umidade = 0.0f;     // Variável para armazenar a umidade lida
         float temperatura = 0.0f; // Variável para armazenar a temperatura lida
 
-        portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED; // Mutex para proteger a leitura dos dados
+        portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED; // Seção crítica para proteger a leitura dos dados
+
+        SemaphoreHandle_t dhtMutex = NULL; // Mutex para proteger o handshake
 
         /**
          * @brief Função para aguardar o sensor mudar para o estado esperado (HIGH ou LOW) com timeout
@@ -83,6 +85,7 @@ class DHT {
             vTaskDelay(pdMS_TO_TICKS(18)); // Aguarda 18ms
 
             gpio_set_direction(pino, GPIO_MODE_INPUT); // Define o pino como entrada
+            // esp_rom_delay_us(10); // Aguarda 10us para garantir que a linha voltou a HIGH
             
             if (esperarEstado(0, TIMEOUT_PULSO_US) == -1) {
                 ESP_LOGE(TAG, "Timeout: Sensor não iniciou o pulso de LOW na resposta");
@@ -163,12 +166,17 @@ class DHT {
         }
     
     public:
-        explicit DHT(uint8_t pino) : pino(static_cast<gpio_num_t>(pino)) {}
+        explicit DHT(gpio_num_t pino) : pino(pino) {}
 
         ~DHT() {}
 
         /// @brief Função para inicializar o sensor DHT11, configurando o pino GPIO corretamente
         void begin() {
+            // Mutex sendo criado na inicialização para garantir que o FreeRTOS esteja rodando corretamente
+            if (dhtMutex == NULL) {
+                dhtMutex = xSemaphoreCreateMutex();
+            }
+
             gpio_config_t configPino = {
                 .pin_bit_mask = 1ULL << pino,
                 .mode         = GPIO_MODE_INPUT_OUTPUT,
@@ -189,13 +197,27 @@ class DHT {
         esp_err_t leitura() {
             esp_err_t err;
 
+            // Mutex para acesso seguro ao handshake
+            if (xSemaphoreTake(dhtMutex, pdMS_TO_TICKS(1000)) != pdTRUE) {
+                ESP_LOGE(TAG, "Não foi possível obter o Mutex do DHT11");
+                return ESP_ERR_TIMEOUT; 
+            }
+
             err = handshake();
-            if (err != ESP_OK) return err;
+            if (err != ESP_OK) {
+                xSemaphoreGive(dhtMutex); // Liberando o mutex em caso de falha no handshake
+                return err;
+            }
 
             portENTER_CRITICAL(&mux); // Entrando na seção crítica para proteger a leitura dos dados
             err = lerDados();
             portEXIT_CRITICAL(&mux); // Saindo da seção crítica
-            if (err != ESP_OK) return err;
+            if (err != ESP_OK) {
+                xSemaphoreGive(dhtMutex); // Liberando o mutex em caso de falha na leitura dos dados
+                return err;
+            }
+
+            xSemaphoreGive(dhtMutex); // Liberando o mutex se tudo der certo
 
             return decodificador();
         }
