@@ -13,7 +13,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#include "eletronica/pinagem.hpp"
+#include "eletronica.hpp"
 
 /**
  * @note Sobre o funcionamento do DHT11:

@@ -7,14 +7,14 @@
 #include "esp_err.h"
 #include "esp_log.h"
 
-#include "eletronica/pinagem.hpp"
+#include "eletronica.hpp"
 
 class LDR {
     private:
         adc_oneshot_unit_handle_t adcHandle;
-        adc_channel_t canal = Pinagem::CANAL_LDR;
+        adc_channel_t canal = ESP::CANAL_LDR;
 
-        const char* TAG = "LDR";
+        static constexpr const char* TAG = "LDR";
 
         void initADC() {
             adc_oneshot_unit_init_cfg_t configADC = {

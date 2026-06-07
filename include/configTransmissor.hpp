@@ -11,7 +11,7 @@
 #include "freertos/queue.h"
 #include "esp_log.h"
 
-#include "eletronica/pinagem.hpp"
+#include "eletronica.hpp"
 #include "sensores/ldr.hpp"
 #include "sensores/dht.hpp"
 
