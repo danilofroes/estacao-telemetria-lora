@@ -35,11 +35,10 @@ class LoRa {
             // Alterando o bit 7 do registrador para 1 indicando que é operação de escrita e armazenando junto com o valor no array
             std::array<uint8_t, 2> txData = {static_cast<uint8_t>(reg | 0x80), valor};
 
-            spi_transaction_t transacao = {
-                .length = 16,               // 1 byte para o registrador e 1 byte para o valor
-                .tx_buffer = txData.data(), // Enviando o array de 2 bytes (registrador + valor)
-                .rx_buffer = nullptr        // Sem buffer de rx
-            };
+            spi_transaction_t transacao = {};
+            transacao.length = 16;               // 1 byte para o registrador e 1 byte para o valor
+            transacao.tx_buffer = txData.data(); // Enviando o array de 2 bytes (registrador + valor)
+            transacao.rx_buffer = nullptr;       // Sem buffer de rx
 
             ESP_ERROR_CHECK(spi_device_polling_transmit(spi, &transacao)); // Transmitindo a transação via SPI
         }
@@ -55,11 +54,10 @@ class LoRa {
             std::array<uint8_t, 2> txData = {static_cast<uint8_t>(reg & 0x7F), 0x00};
             std::array<uint8_t, 2> rxData = {0x00, 0x00}; // Array para armazenar os dados recebidos (registrador + valor)
 
-            spi_transaction_t transacao = {
-                .length = 16,               // 1 byte para o registrador e 1 byte para o valor
-                .tx_buffer = txData.data(), // Enviando o array de 2 bytes
-                .rx_buffer = rxData.data()  // Recebendo os dados no array de 2 bytes
-            };
+            spi_transaction_t transacao = {};
+            transacao.length = 16;               // 1 byte para o registrador e 1 byte para o valor
+            transacao.tx_buffer = txData.data(); // Enviando o array de 2 bytes
+            transacao.rx_buffer = rxData.data(); // Recebendo os dados no array de 2 bytes
 
             ESP_ERROR_CHECK(spi_device_polling_transmit(spi, &transacao)); // Transmitindo a transação via SPI
 
@@ -68,14 +66,13 @@ class LoRa {
 
         /// @brief Função para inicializar o barramento SPI
         void initSPI() {
-            spi_bus_config_t busConfig = {
-                .mosi_io_num = pinoMOSI,
-                .miso_io_num = pinoMISO,
-                .sclk_io_num = pinoSCK,
-                .quadwp_io_num = -1,
-                .quadhd_io_num = -1,
-                .max_transfer_sz = 0
-            };
+            spi_bus_config_t busConfig = {};
+            busConfig.mosi_io_num = pinoMOSI;
+            busConfig.miso_io_num = pinoMISO;
+            busConfig.sclk_io_num = pinoSCK;
+            busConfig.quadwp_io_num = -1;
+            busConfig.quadhd_io_num = -1;
+            busConfig.max_transfer_sz = 0;
 
             ESP_ERROR_CHECK(spi_bus_initialize(SPI2_HOST, &busConfig, SPI_DMA_CH_AUTO)); // Usando no SPI2 (HSPI)
         }
@@ -83,13 +80,12 @@ class LoRa {
         /// @brief Função para inicializar o dispositivo SPI para o módulo SX1276
         void initSX() {
             // Configurando o dispositivo SPI para o módulo SX1276
-            spi_device_interface_config_t devConfig = {
-                .mode = 0, // Modo SPI 0
-                .clock_source = SPI_CLK_SRC_DEFAULT,
-                .clock_speed_hz = 5'000'000, // 5 MHz
-                .spics_io_num = pinoSS,
-                .queue_size = 1,
-            };
+            spi_device_interface_config_t devConfig = {};
+            devConfig.mode = 0; // Modo SPI 0
+            devConfig.clock_source = SPI_CLK_SRC_DEFAULT;
+            devConfig.clock_speed_hz = 5'000'000; // 5 MHz
+            devConfig.spics_io_num = pinoSS;
+            devConfig.queue_size = 1;
 
             ESP_ERROR_CHECK(spi_bus_add_device(SPI2_HOST, &devConfig, &spi));
         }
