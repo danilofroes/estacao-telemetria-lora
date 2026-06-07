@@ -52,7 +52,7 @@ class LDR {
 
             esp_err_t err = adc_oneshot_read(adcHandle, canal, &valorRaw);
 
-            if (err = ESP_OK) {
+            if (err == ESP_OK) {
                 return valorRaw;
             }
 

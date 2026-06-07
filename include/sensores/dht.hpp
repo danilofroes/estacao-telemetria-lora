@@ -34,7 +34,7 @@
 
 class DHT {
     private:
-        static constexpr char* TAG = "DHT11"; // Tag para logs
+        static constexpr const char* TAG = "DHT11"; // Tag para logs
 
         static constexpr uint8_t TIMEOUT_RESPOSTA_US = 100; // Tempo máximo para aguardar as respostas do sensor (em microsegundos)
         static constexpr uint8_t TIMEOUT_PULSO_US = 60;     // Tempo máximo para aguardar os pulsos do sensor (em microsegundos)
@@ -56,11 +56,8 @@ class DHT {
          * @param timeoutUs O tempo máximo para aguardar o estado esperado (em microsegundos)
          * 
          * @return O tempo em microsegundos que levou para o sensor atingir o estado esperado, ou -1 se ocorreu um timeout
-         * 
-         * @note A flag IRAM_ATTR é usada para garantir que essa função seja executada na RAM, evitando atrasos causados 
-         * por acesso à memória flash, sendo crucial para a precisão na leitura dos pulsos do sensor.
          */
-        IRAM_ATTR int esperarEstado(int estadoEsperado, int timeoutUs) {
+        int esperarEstado(int estadoEsperado, int timeoutUs) {
             int usEsperados = 0;
 
             while (gpio_get_level(pino) != estadoEsperado) {
@@ -109,14 +106,12 @@ class DHT {
          * @brief Função para ler os 40 bits de dados do sensor DHT11
          * 
          * @return ESP_OK se a leitura foi bem-sucedida, ou um código de erro específico caso tenha falhado
-         * 
-         * @note A flag IRAM_ATTR também é usada aqui para garantir que a função seja executada na RAM
          */
-        IRAM_ATTR esp_err_t lerDados() {
+        esp_err_t lerDados() {
             dados.fill(0); // Limpando o array de dados para evitar lixo de memória e inicializando com 0s
 
             // Passando por todos 40 bits
-            for (uint8_t i = 0; i < LIMITE_BIT_1_US; i++) {
+            for (uint8_t i = 0; i < 40; i++) {
 
                 // Aguarda o pulso LOW inicial de aproximadamente 50us acabar
                 if (esperarEstado(1, TIMEOUT_PULSO_US) == -1) {
