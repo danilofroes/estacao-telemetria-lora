@@ -14,6 +14,7 @@
 #include "eletronica.hpp"
 #include "sensores/ldr.hpp"
 #include "sensores/dht.hpp"
+#include "comunicacao/lora.hpp"
 
 static const char* TAG = "Transmissor"; // Tag para logs
 
@@ -26,8 +27,9 @@ struct DadosTelemetria {
 
 QueueHandle_t filaDados; // Handle da fila de comunicação entre tarefas
 
-DHT sensorDHT(Pinagem::PINO_DHT); // Instância do sensor DHT11
+DHT sensorDHT(ESP::PINO_DHT); // Instância do sensor DHT11
 LDR sensorLDR; // Instância do sensor LDR
+LoRa moduloLoRa; // Instância do módulo LoRa SX1276
 
 /**
  * @brief Task responsável por fazer a leitura dos sensores DHT11 e LDR, armazenando os dados no struct e enviando para a fila de comunicação
@@ -72,15 +74,26 @@ void taskLeituraSensores(void *pvParameters) {
 void taskEnvioLora(void *pvParameters) {
    ESP_LOGI(TAG, "Task de envio via LoRa iniciada no Core %d", xPortGetCoreID());
 
+   if (!moduloLoRa.begin()) {
+        ESP_LOGE(TAG, "Travando task. LoRa não iniciou.");
+        vTaskDelete(NULL);
+   }
+
    DadosTelemetria dadosRecebidos; // Struct com os dados recebidos
 
    for (;;) {
       // Recebendo dados da fila, a task vai ficar bloqueada até o momento que haja dados na fila
       if (xQueueReceive(filaDados, &dadosRecebidos, portMAX_DELAY) == pdTRUE) {
-         ESP_LOGI(TAG, "[Core %d] Preparando para transmitir dados. Temp base: %.1fC...", 
-                  xPortGetCoreID(), dadosRecebidos.temperatura);
-      }
+         ESP_LOGI(TAG, "[Core %d] Preparando para transmitir dados. Temp base: %.1fC, Umi base: %.1f%%, Lum base: %.1f%%", 
+                  xPortGetCoreID(), dadosRecebidos.temperatura, dadosRecebidos.umidade, dadosRecebidos.luminosidade);
 
-      vTaskDelay(pdMS_TO_TICKS(100));
+         std::array<char, 32> bufferTx;
+         snprintf(bufferTx.data(), bufferTx.size(), "T:%.1f,U:%.1f,L:%.1f", 
+                  dadosRecebidos.temperatura, dadosRecebidos.umidade, dadosRecebidos.luminosidade);
+
+         uint8_t tamanho = strlen(bufferTx.data());
+
+         moduloLoRa.transmitirDados(reinterpret_cast<uint8_t*>(bufferTx.data()), tamanho);
+      }
    }
 }
