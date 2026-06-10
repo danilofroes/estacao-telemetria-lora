@@ -18,7 +18,7 @@
 /**
  * @note Sobre o funcionamento do DHT11:
  * Possui protocolo próprio (single-bus), seguiremos as orietações do datasheet para seu funcionamento.
- * Será conectado com sensor PULL-UP externo para garantia de funcionamento ideal.
+ * Será conectado com um resistor PULL-UP externo para garantia de funcionamento ideal.
  * 
  * Recebe uma chamada LOW do ESP por 18ms (output), após isso, funcionará como input, com o DHT puxando para LOW por 80us.
  * Logo em seguida envia os 40 bits em sequência, todo bit começará com pulso LOW de 50us e ficará em HIGH após isso.

@@ -163,4 +163,34 @@ class LoRa {
             writeRegister(SX::REG_IRQ_FLAGS, SX::IRQ_TX_DONE_MASK);
             ESP_LOGI(TAG, "Dados transmitidos com sucesso!");
         }
+
+        uint8_t receberDados(uint8_t* buffer, size_t tamanhoMax) {
+            writeRegister(SX::REG_OP_MODE, SX::MODE_LONG_RANGE_MODE | SX::MODE_RX_CONT); // Colocando o módulo no modo de recepção contínua
+
+            uint8_t irqFlags = readRegister(SX::REG_IRQ_FLAGS); // Lendo as flags de interrupção para verificar o pacote está intacto
+
+            if ((irqFlags & SX::IRQ_RX_DONE_MASK) != 0) {
+                writeRegister(SX::REG_IRQ_FLAGS, SX::IRQ_RX_DONE_MASK); // Limpa a flag de RX_DONE escrevendo 1 nela
+                
+                uint8_t length = readRegister(SX::REG_RX_NB_BYTES); // Lendo o número de bytes recebidos e disponíveis para leitura no FIFO
+
+                if (length > tamanhoMax) {
+                    ESP_LOGW(TAG, "Pacote recebido maior que o buffer disponível. Truncando para %d bytes.", tamanhoMax);
+                    length = tamanhoMax; // Trunca o comprimento se for maior que o tamanho máximo do buffer
+                }
+                
+                // Aponta o ponteiro do FIFO para o endereço onde a mensagem foi guardada
+                uint8_t currentAddr = readRegister(SX::REG_FIFO_RX_CUR_ADDR);
+                writeRegister(SX::REG_FIFO_ADDR_PTR, currentAddr);
+                
+                // Lê byte a byte do FIFO para o nosso buffer
+                for (int i = 0; i < length; i++) {
+                    buffer[i] = readRegister(SX::REG_FIFO);
+                }
+                
+                return length;
+            }
+            
+            return 0; // Retorna 0 se nada chegou
+        }
 };

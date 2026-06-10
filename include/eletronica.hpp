@@ -43,6 +43,8 @@ namespace SX {
     constexpr uint8_t REG_FIFO_RX_BASE_ADDR = 0x0F; // Endereço base para leitura de dados recebidos
     constexpr uint8_t REG_IRQ_FLAGS         = 0x12; // Flags de interrupção para eventos
     constexpr uint8_t REG_PAYLOAD_LENGTH    = 0x22; // Comprimento do payload a ser transmitido ou recebido
+    constexpr uint8_t REG_FIFO_RX_CUR_ADDR  = 0x10; // Endereço atual do ponteiro de leitura do FIFO para dados recebidos
+    constexpr uint8_t REG_RX_NB_BYTES       = 0x13; // Número de bytes recebidos e disponíveis para leitura no FIFO
 
     // Modos de operação
     constexpr uint8_t MODE_SLEEP            = 0x00; // Modo de baixo consumo, módulo inativo
